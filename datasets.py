@@ -6,6 +6,7 @@ from torch_geometric.utils import is_undirected, to_undirected, negative_samplin
 from torch_geometric.data import Data
 import networkx as nx
 import os
+from config_path import DATASET_PATH
 
 
 class BaseGraph(Data):
@@ -91,7 +92,7 @@ def load_dataset(name: str, hypertuning=False):
     # Path of the synthetic datasets
     file_path_1 = "/dataset_"
     # Path of the real-world datasets
-    file_path_2 = "../data"
+    file_path_2 = DATASET_PATH
 
     if name in ["coreness", "cut_ratio", "density", "component"]:
         obj = np.load(f"file_path_1/{name}/tmp.npy", allow_pickle=True).item()
@@ -207,8 +208,6 @@ def load_dataset(name: str, hypertuning=False):
             batch_first=True,
             padding_value=-1)
         path_to_edge_list = f"{file_path_2}/{name}/edge_list.txt"
-        # if hypertuning:
-        #     path_to_edge_list = os.path.join(file_path_2, path_to_edge_list)
         rawedge = nx.read_edgelist(path_to_edge_list).edges
         edge_index = torch.tensor([[int(i[0]), int(i[1])]
                                    for i in rawedge]).t()

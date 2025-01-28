@@ -18,6 +18,7 @@ import datasets
 from impl import SubGDataset, metrics, config
 from impl.train import train_model, test_model
 from custom_models import SubIGNN_new, VanillaGCN, SoftEIGNN, SoftIGNN, baseline
+from config_path import DATASET_PATH
 
 # Set random seed for reproducibility
 def set_seed(seed: int):
@@ -374,7 +375,7 @@ def get_top_k_adj(embeddings, k, distance_metric='cosine', normalize_rows=True):
     return edge_indices, edge_weights
 
 
-def load_and_process_adjs(data_path, k, channel='position'):
+def load_and_process_adjs(dataset, k, channel='position'):
     """
     Reads adjacency matrices from files, normalizes them by their row sum,
     processes them to retain the top-k largest elements globally, and returns
@@ -430,11 +431,11 @@ def load_and_process_adjs(data_path, k, channel='position'):
 
     # Load the specified adjacency matrix
     if channel == 'position':
-        adj = np.load(f"../data/{data_path}/subgraph_position_adj.npy")
+        adj = np.load(f"{DATASET_PATH}/{dataset}/subgraph_position_adj.npy")
     elif channel == 'neighbor':
-        adj = np.load(f"../data/{data_path}/subgraph_neighbor_adj.npy")
+        adj = np.load(f"{DATASET_PATH}/{dataset}/subgraph_neighbor_adj.npy")
     elif channel == 'structure':
-        adj = np.load(f"../data/{data_path}/subgraph_structure_adj.npy")
+        adj = np.load(f"{DATASET_PATH}/{dataset}/subgraph_structure_adj.npy")
     else:
         raise ValueError(f"Invalid channel: {channel}. Choose from 'position', 'neighbor', 'structure'.")
 
@@ -683,7 +684,7 @@ def train(args,
         elif args.channel == 'None':
             subgraph_edge_index, subgraph_edge_weight = None, None
         else:
-            subgraph_edge_index, subgraph_edge_weight = load_and_process_adjs(data_path=args.dataset, k=args.num_edges, channel=args.channel)
+            subgraph_edge_index, subgraph_edge_weight = load_and_process_adjs(dataset=args.dataset, k=args.num_edges, channel=args.channel)
         
         features, adj_hybrid, node_mask = get_hybrid_edge_index(args, 
                                                                baseG, 

@@ -86,7 +86,6 @@ class SubIGNN_v2(nn.Module):
         
         node_embeddings = embeddings[node_mask]
         subgraph_embeddings_1 = projection_matrix(node_embeddings)
-        # final_embedding = subgraph_embeddings_1
         subgraph_embeddings_2 = embeddings[~node_mask]
         att = self.attention(subgraph_embeddings_1, subgraph_embeddings_2)
         final_embedding = att[:,0].reshape(-1,1)*subgraph_embeddings_1 + att[:,1].reshape(-1,1)*subgraph_embeddings_2
@@ -110,13 +109,10 @@ class SubIGNN_v2(nn.Module):
         graph_residual_loss += residual_loss
         graph_residual_approximate_loss += proxy_residual_loss
         loss = clssifier_loss + gamma * (graph_residual_loss - graph_residual_approximate_loss)
-        # if loss.item()<-0.1:
-        #     import pdb; pdb.set_trace()
         return loss
     
     @torch.no_grad()
     def predict(self, features, sparse_adj, train_mask):
-        # hybrid_embeddings = self.forward(features, sparse_adj)
         return self.classify(train_mask)
     
 
@@ -239,13 +235,10 @@ class SubIGNN_new(nn.Module):
         graph_residual_loss += residual_loss
         graph_residual_approximate_loss += proxy_residual_loss
         loss = clssifier_loss + gamma * (graph_residual_loss - graph_residual_approximate_loss)
-        # if loss.item()<-0.1:
-        #     import pdb; pdb.set_trace()
         return loss
     
     @torch.no_grad()
     def predict(self, features, sparse_adj, train_mask):
-        # hybrid_embeddings = self.forward(features, sparse_adj)
         return self.classify(train_mask)
     
 
@@ -417,7 +410,6 @@ class SoftIGNN(nn.Module):
         return clssifier_loss + gamma * (graph_residual_loss - graph_residual_approximate_loss)
     
     def predict(self, features, sparse_adj, train_mask):
-        # hybrid_embeddings = self.forward(features, sparse_adj)
         return self.classify(train_mask)
 
 
@@ -494,7 +486,6 @@ class baseGNN(nn.Module):
             x = conv(x, sparse_adj)
             x = F.relu(x)
             x = F.dropout(x, p=self.dropout, training=self.training)
-        # x = self.convs[-1](x, sparse_adj)
         return x
     
 class VanillaGCN(nn.Module):
