@@ -1,8 +1,0 @@
-unused/
-__pycache__/
-*.json
-train_em_user_v2.py
-train_hpo_metab.py
-train_hpo_neuro_v2.py
-train_ppi_bp.py
-.gitignore
