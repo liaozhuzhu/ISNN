@@ -13,13 +13,11 @@ or use your preferred package manager.
 
 ### 2. Datasets
 
-The **Real-World Datasets** used in this project were sourced from the paper:
+The **Real-World Datasets** used in this project includes `HPO_METAB`, `HPO_NEURO`, `PPI_BP`, and `EM_USER`, all of which were sourced from the paper:
 
-```txt
-**"Subgraph Neural Networks"**  
+**"Subgraph Neural Networks"**
 Emily Alsentzer, Samuel G. Finlayson, Michelle M. Li, Marinka Zitnik  
-_Proceedings of Neural Information Processing Systems (NeurIPS), 2020_  
-```
+_Proceedings of Neural Information Processing Systems (NeurIPS), 2020_ [[arXiv](https://arxiv.org/abs/2006.10538)]
 
 and can be downloaded from this Dropbox link [here](https://www.dropbox.com/scl/fo/hbjyz991xifmuccfk82hh/AEq9fYl_Ed4TOWlnifJsJ5w?rlkey=zpyvstdbjbwyfmi3e2l2qtqih&e=1&dl=0).
 
