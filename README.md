@@ -44,7 +44,7 @@ To run ISNN, make sure you are cd'd into the `ISNN` directory and run the follow
 python ISNN.py --dataset {dataset_name}
 ```
 
-The hyperparameters used to produce the results in the paper are preset and can be found in the `/hyperparams/{dataset}.yml` file. To change the hyperparameters, you can modify the `.yml` file or pass the hyperparameters as arguments to the command line.
+The hyperparameters used to produce the results in the paper are preset and can be found in the `/hyperparams/{dataset}.yml` file. To change the hyperparameters, you can modify the `.yml` file.
 
 ## Results
 
