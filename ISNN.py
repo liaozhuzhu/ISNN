@@ -34,8 +34,6 @@ def set_seed(seed: int):
 # Parse command-line arguments for hyperparameters
 def parse_args():
     parser = argparse.ArgumentParser(description='Run SubIGNN training')
-def parse_args():
-    parser = argparse.ArgumentParser(description='Run SubIGNN training')
     parser.add_argument('--dataset', type=str, default='hpo_metab', help='Path to the dataset')
     parser.add_argument('--model', type=str, default='isnn', help='Model to use for training')
     parser.add_argument('--device', type=int, default=0, help='Device to use for training')
@@ -878,6 +876,7 @@ def train(args,
     exp_results[f"{args.dataset}"] = {
         "results": {
             "Test Accuracy": f"{tst_average:.3f} ± {tst_error:.3f}",
+            "AUC": f"{average_auc:.3f} ± {error_auc:.3f}",
             "Avg runtime": f"{np.average(run_times):.3f} ± {np.std(run_times):.3f}",
             "Avg preprocessing time": f"{np.average(preproc_times):.3f} ± {np.std(preproc_times):.3f}",
             "Avg train time": f"{np.average(trn_time):.3f} ± {np.std(trn_time):.3f}",
