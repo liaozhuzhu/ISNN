@@ -5,3 +5,10 @@ hidden_dim: 64
 gamma: 0.001
 lr: 0.002
 inner_iters: 3
+channel: 'None'
+num_edges: 1
+gamma: 0.0003
+knn: 50
+switch_epoch: 80 
+kappa: 0.95
+num_clusters: 9

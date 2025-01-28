@@ -79,7 +79,7 @@ def train(optimizer, model, dataloader, metrics, loss_fn, device, row, col, run,
     return metrics(pred.detach().cpu().numpy(), y.detach().cpu().numpy()), sum(total_loss) / len(total_loss)
 
 
-def myTrain(optimizer, model, G, features, sparse_adj, metrics):
+def train_model(optimizer, model, G, features, sparse_adj, metrics):
     '''
     Train models in an epoch.
     '''
@@ -101,7 +101,7 @@ def myTrain(optimizer, model, G, features, sparse_adj, metrics):
 
 
 @torch.no_grad()
-def myTest(model, G, features, sparse_adj, metrics, testing=True):
+def test_model(model, G, features, sparse_adj, metrics, testing=True):
     '''
     Train models in an epoch.
     '''

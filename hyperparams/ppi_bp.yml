@@ -5,3 +5,9 @@ hidden_dim: 64
 gamma: 0.001
 lr: 0.005
 inner_iters: 2
+channel: 'None'
+num_edges: 1
+gamma: 0.01
+knn: 50
+switch_epoch: 40 
+kappa: 0.95

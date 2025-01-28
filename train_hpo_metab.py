@@ -973,7 +973,6 @@ def run_helper(argument_class, hypertuning=False):
 
     params.update({'args': argument_class,
                    'hypertuning': hypertuning})
-    
     params['gamma'] = argument_class.gamma
     return train(**(params))
 
