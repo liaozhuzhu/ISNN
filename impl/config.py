@@ -16,5 +16,3 @@ def set_device(idx):
         device_index = idx
         device = torch.device(
             f'cuda:{device_index}' if torch.cuda.is_available() else 'cpu')
-    # print("-" * 64)
-    # print("device =", device)
