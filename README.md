@@ -25,10 +25,10 @@ Once installed, unzip the contents of the folder and set the `DATASET_PATH` vari
 
 ### 3. Plotting Results
 
-Inside the `ISNN` directory, create a directory called `plots` with a subdirectory for each dataset. For example, to see the results for the `HPO_METAB` dataset:
+Inside the root (`ISNN`) directory, create a directory called `plots` with a subdirectory for each dataset you are working with. For example, to create the directories for the `HPO_METAB` dataset, run the following commands:
 
 ```bash
-cd ISNN
+cd ~/PATH/TO/ISNN
 mkdir plots
 cd plots
 mkdir hpo_metab
@@ -45,3 +45,7 @@ python ISNN.py --dataset {dataset_name}
 ```
 
 The hyperparameters used to produce the results in the paper are preset and can be found in the `/hyperparams/{dataset}.yml` file. To change the hyperparameters, you can modify the `.yml` file or pass the hyperparameters as arguments to the command line.
+
+## Results
+
+A summary of the results will be written to `{dataset_name}_{model}_results.json` in the root directory of the project.
