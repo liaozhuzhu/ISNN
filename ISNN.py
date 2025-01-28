@@ -970,7 +970,7 @@ def run_helper(argument_class, hypertuning=False):
     tloader_fn = SubGDataset.GDataloader
     
     # read configuration
-    path_to_config = f"compl-config-my/{argument_class.dataset}.yml"
+    path_to_config = f"hyperparams/{argument_class.dataset}.yml"
 
     with open(path_to_config) as f:
         params = yaml.safe_load(f)
