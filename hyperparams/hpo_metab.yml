@@ -4,8 +4,8 @@ dropout: 0
 hidden_dim: 64
 gamma: 0.001
 lr: 0.002
+weight_decay: 0.00001
 inner_iters: 2
-channel: 'None'
 num_edges: 1
 gamma: 0.001
 knn: 30

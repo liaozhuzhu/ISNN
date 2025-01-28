@@ -22,7 +22,6 @@ from config_path import DATASET_PATH
 
 # Set random seed for reproducibility
 def set_seed(seed: int):
-    # print("seed = ", seed)
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -35,22 +34,17 @@ def set_seed(seed: int):
 # Parse command-line arguments for hyperparameters
 def parse_args():
     parser = argparse.ArgumentParser(description='Run SubIGNN training')
+def parse_args():
+    parser = argparse.ArgumentParser(description='Run SubIGNN training')
     parser.add_argument('--dataset', type=str, default='hpo_metab', help='Path to the dataset')
     parser.add_argument('--model', type=str, default='isnn', help='Model to use for training')
-    parser.add_argument('--channel', type=str, default='None', help='Channel to use')
     parser.add_argument('--device', type=int, default=0, help='Device to use for training')
     parser.add_argument('--num_epochs', type=int, default=1500, help='Number of epochs')
-    parser.add_argument('--switch_epoch', type=int, default=200, help='Time to switch to new subgraph')
-    parser.add_argument('--num_edges', type=int, default=1, help='Number of edges')
-    parser.add_argument('--hidden_dim', type=int, default=64, help='Hidden dimension size')
-    parser.add_argument('--knn', type=int, default=2, help='number of nearest neighbors')
-    parser.add_argument('--weight_decay', type=float, default=1e-5, help='Weight decay')
-    parser.add_argument('--gamma', type=float, default=0.01, help='Gamma')
-    parser.add_argument('--kappa', type=float, default=0.95, help='Kappa')
-    parser.add_argument('--num_cluster', type=int, default=2, help='Number of clusters')
     parser.add_argument('--seed', type=int, default=44, help='Random seed')
     parser.add_argument('--repeat', type=int, default=1, help='Number of repetitions for the experiment')
     parser.add_argument('--pretrain', action='store_true', help='Whether to pretrain the model')
+    parser.add_argument('--channel', type=str, default='None', help='Channel to use for training, valid options are "position", "neighbor", "structure"')
+
     return parser.parse_args()
 
 
@@ -112,7 +106,7 @@ def get_subgraph_adj_multi_label(embeddings, G, num_clusters, num_edges_to_add, 
         if class_mask.size(0) > 0:
             # Adjust number of clusters based on available samples
             effective_num_clusters = min(num_clusters, class_mask.size(0))
-            kmeans = KMeans(n_clusters=effective_num_clusters, random_state=42)
+            kmeans = KMeans(n_init=10, n_clusters=effective_num_clusters, random_state=42)
             class_embeddings = train_embeddings[class_mask]
             clusters = kmeans.fit_predict(class_embeddings.cpu().numpy())
             cluster_assignments.append((class_mask, clusters))
@@ -623,11 +617,10 @@ class SubgraphProjection(nn.Module):
 def train(args, 
         hidden_dim=64,
         conv_layer=8,
-        dropout=0.3,
+        dropout=0,
         batch_size=64,
         lr=0.001,
         weight_decay=1e-5,
-        num_epochs=1000,
         hypertuning=False,
         inner_iters=5,
         gamma=0.01,
@@ -635,7 +628,6 @@ def train(args,
         knn=30,
         switch_epoch=90, 
         kappa=0.95,
-        channel='None',
         num_clusters=2
         ):
     
@@ -656,14 +648,14 @@ def train(args,
         features = features.to(device)
         baseG.y = baseG.y.to(device)
         adj_hybrid = baseG.edge_index.to(device)
-        optimizer = torch.optim.Adam(pre_train_model.parameters(), lr=lr, weight_decay=args.weight_decay)
+        optimizer = torch.optim.Adam(pre_train_model.parameters(), lr=lr, weight_decay=weight_decay)
         for i in range(200):
             trn_score, loss = train_model(optimizer, pre_train_model, baseG, features, adj_hybrid, score_fn)
         tmp = test_model(pre_train_model, baseG, features, adj_hybrid, score_fn, testing=True)
         print(f"Pretrain accuracy: {tmp:.4f}")
         with torch.no_grad():
             embeddings = pre_train_model(features, adj_hybrid).detach()
-        subgraph_edge_index, subgraph_edge_weight = get_knn_adj(embeddings, args.knn)
+        subgraph_edge_index, subgraph_edge_weight = get_knn_adj(embeddings, knn)
 
 
 
@@ -684,13 +676,13 @@ def train(args,
         elif args.channel == 'None':
             subgraph_edge_index, subgraph_edge_weight = None, None
         else:
-            subgraph_edge_index, subgraph_edge_weight = load_and_process_adjs(dataset=args.dataset, k=args.num_edges, channel=args.channel)
+            subgraph_edge_index, subgraph_edge_weight = load_and_process_adjs(dataset=args.dataset, k=num_edges, channel=args.channel)
         
         features, adj_hybrid, node_mask = get_hybrid_edge_index(args, 
                                                                baseG, 
                                                                subgraph_edge_index=subgraph_edge_index,
                                                                subgraph_edge_weights=subgraph_edge_weight,
-                                                               num_random_edges=args.num_edges)
+                                                               num_random_edges=num_edges)
     else:
         features = baseG.x
 
@@ -718,7 +710,7 @@ def train(args,
                             loss_fn=loss_fn,
                             dropout=dropout,
                             gamma=gamma,
-                            kappa=args.kappa,
+                            kappa=kappa,
                             ).to(device)
             adj_hybrid = adj_hybrid.to(device)
         
@@ -732,7 +724,7 @@ def train(args,
                             device=device,
                             loss_fn=loss_fn,
                             dropout=dropout,
-                            gamma=gamma,
+                            gamma=gamma
                             ).to(device)
             adj_hybrid = baseG.edge_index.to(device)
 
@@ -746,7 +738,7 @@ def train(args,
                             device=device,
                             loss_fn=loss_fn,
                             dropout=dropout,
-                            gamma=gamma,
+                            gamma=gamma
                             ).to(device)
 
             # Normalize adjacency matrix
@@ -788,7 +780,7 @@ def train(args,
 
         end_pre = time.time()
         preproc_times.append(end_pre - start_pre)
-        optimizer = torch.optim.Adam(gnn.parameters(), lr=lr, weight_decay=args.weight_decay)
+        optimizer = torch.optim.Adam(gnn.parameters(), lr=lr, weight_decay=weight_decay)
 
 
         scd = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
@@ -801,21 +793,20 @@ def train(args,
         early_stop = 0
 
         for i in range(1, args.num_epochs+1):
-
-            if i == args.switch_epoch  and args.model in ['isnn'] and args.channel == 'None' and not args.pretrain:
+            if i == switch_epoch  and args.model in ['isnn'] and args.channel == 'None' and not args.pretrain:
                 with torch.no_grad():
                     embeddings = gnn.get_subgraph_embeddings()
                 
                     if args.dataset == 'hpo_neuro':
-                        subgraph_edge_index, subgraph_edge_weight = get_subgraph_adj_multi_label(embeddings, baseG, args.num_cluster, args.knn, binary=True)
+                        subgraph_edge_index, subgraph_edge_weight = get_subgraph_adj_multi_label(embeddings, baseG, num_clusters, knn, binary=True)
                     else:
-                        subgraph_edge_index, subgraph_edge_weight = get_subgraph_adj(embeddings, baseG, args.knn, binary=True)
+                        subgraph_edge_index, subgraph_edge_weight = get_subgraph_adj(embeddings, baseG, knn, binary=True)
                 subgraph_edge_index += baseG.x.shape[0]
                 _, adj_hybrid, _ = get_hybrid_edge_index(args, 
                                                         baseG, 
                                                         subgraph_edge_index=subgraph_edge_index,
                                                         subgraph_edge_weights=subgraph_edge_weight,
-                                                        num_random_edges=args.num_edges)
+                                                        num_random_edges=num_edges)
                 adj_hybrid = adj_hybrid.to(device)
 
 
@@ -881,7 +872,7 @@ def train(args,
     average_auc = np.average(auc_outs)
     error_auc = np.std(auc_outs) / np.sqrt(len(auc_outs))
     print(
-        f"Gamma: {args.gamma}, Test Accuracy {tst_average :.3f} ± {tst_error :.3f}, AUC {average_auc:.3f} ± {error_auc:.3f}"
+        f"Gamma: {gamma}, Test Accuracy {tst_average :.3f} ± {tst_error :.3f}, AUC {average_auc:.3f} ± {error_auc:.3f}"
     )
     exp_results = {}
     exp_results[f"{args.dataset}"] = {
@@ -928,7 +919,7 @@ def train(args,
     plt.xlabel("Epoch")
     plt.ylabel("Score")
     plt.title(f"Train and Test Scores for {args.dataset}")
-    plt.savefig(f"plots/{args.dataset}/{args.dataset}_{args.model}_{args.num_edges}_{args.channel}_{args.gamma}_scores.png")
+    plt.savefig(f"plots/{args.dataset}/{args.dataset}_{args.model}_{num_edges}_{args.channel}_{gamma}_scores.png")
     plt.close()
     print(
         f"Best Mean Accuracy: {np.max(np.mean(test_scores, axis=0))}"
@@ -974,16 +965,15 @@ def run_helper(argument_class, hypertuning=False):
 
     with open(path_to_config) as f:
         params = yaml.safe_load(f)
-
+        
     params.update({'args': argument_class,
                    'hypertuning': hypertuning})
     
-    params['gamma'] = argument_class.gamma
+    print(params)
     return train(**(params))
 
 
 if __name__ == "__main__":
     args = parse_args()
-    print(vars(args))
     run_helper(args)
     print('\n')

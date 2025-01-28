@@ -4,7 +4,7 @@ import torch
 from sklearn.metrics import roc_auc_score
 
 
-def callulate_auc(preds, labels):
+def calculate_auc(preds, labels):
     if labels.unique().shape[0] == 2:
         preds = torch.sigmoid(preds)
         return roc_auc_score(labels.cpu().numpy(), preds.cpu().numpy())
@@ -87,15 +87,13 @@ def train_model(optimizer, model, G, features, sparse_adj, metrics):
     # for batch in dataloader:
     optimizer.zero_grad()
     train_mask = G.mask==0
-    # random_train_mask = random_mask_selection_with_ratio(train_mask, 0.2)
     loss = model.loss(features, sparse_adj, G.y[train_mask], train_mask)
     loss.backward()
     optimizer.step()
     with torch.no_grad():
         pred = model.predict(features, sparse_adj, train_mask)
-        auc = callulate_auc(pred, G.y[train_mask])
+        auc = calculate_auc(pred, G.y[train_mask])
         f1 = metrics(pred.cpu().numpy(), G.y[train_mask].cpu().numpy())
-    # import pdb; pdb.set_trace()
     return f1, auc, loss.item()
 
 
@@ -113,7 +111,7 @@ def test_model(model, G, features, sparse_adj, metrics, testing=True):
     target = G.y[mask]
     pred = model.predict(features, sparse_adj, mask)
     f1 = metrics(pred.cpu().numpy(), target.cpu().numpy())
-    auc = callulate_auc(pred, target)
+    auc = calculate_auc(pred, target)
     return f1, auc
 
 
