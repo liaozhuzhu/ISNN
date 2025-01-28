@@ -23,12 +23,25 @@ and can be downloaded from this Dropbox link [here](https://www.dropbox.com/scl/
 
 Once installed, unzip the contents of the folder and set the `DATASET_PATH` variable in the `config_path.py` file to the path of the folder containing the datasets.
 
+### 3. Plotting Results
+
+Inside the `ISNN` directory, create a directory called `plots` with a subdirectory for each dataset. For example, to see the results for the `HPO_METAB` dataset:
+
+```bash
+cd ISNN
+mkdir plots
+cd plots
+mkdir hpo_metab
+```
+
+Once this is setup, you can proceed to [Running](#running) the ISNN framework.
+
 ## Running
 
 To run ISNN, make sure you are cd'd into the `ISNN` directory and run the following command:
 
 ```bash
-python ISNN.py --dataset hpo_metab
+python ISNN.py --dataset {dataset_name}
 ```
 
 The hyperparameters used to produce the results in the paper are preset and can be found in the `/hyperparams/{dataset}.yml` file. To change the hyperparameters, you can modify the `.yml` file or pass the hyperparameters as arguments to the command line.
