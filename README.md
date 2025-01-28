@@ -14,16 +14,11 @@ or use your preferred package manager.
 ### 2. Datasets
 
 The **Real-World Datasets** used in this project were sourced from the paper:
+
+```txt
 **"Subgraph Neural Networks"**  
 Emily Alsentzer, Samuel G. Finlayson, Michelle M. Li, Marinka Zitnik  
 _Proceedings of Neural Information Processing Systems (NeurIPS), 2020_  
-```bibtex
-@article{alsentzer2020subgraph,
-  title={Subgraph Neural Networks},
-  author={Alsentzer, Emily and Finlayson, Samuel G and Li, Michelle M and Zitnik, Marinka},
-  journal={Proceedings of Neural Information Processing Systems, NeurIPS},
-  year={2020}
-}
 ```
 
 and can be downloaded from this Dropbox link [here](https://www.dropbox.com/scl/fo/hbjyz991xifmuccfk82hh/AEq9fYl_Ed4TOWlnifJsJ5w?rlkey=zpyvstdbjbwyfmi3e2l2qtqih&e=1&dl=0).
