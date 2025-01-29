@@ -19,6 +19,7 @@ from impl import SubGDataset, metrics, config
 from impl.train import train_model, test_model
 from custom_models import SubIGNN_new, VanillaGCN, SoftEIGNN, SoftIGNN, baseline
 from config_path import DATASET_PATH
+import itertools
 
 # Set random seed for reproducibility
 def set_seed(seed: int):
@@ -87,56 +88,177 @@ def remove_redundant_edges(edge_index, edge_weight):
 
     return edge_index, edge_weight
 
-def get_subgraph_adj_multi_label(embeddings, G, num_clusters, num_edges_to_add, binary=False):
-    labels = G.y  # Multi-label indicator matrix of shape [num_nodes, num_classes]
+# def get_subgraph_adj_multi_label(embeddings, G, num_clusters, num_edges_to_add, binary=False):
+#     labels = G.y  # Multi-label indicator matrix of shape [num_nodes, num_classes]
+#     train_mask = (G.mask == 0).to(labels.device)
+#     edge_index = []
+#     edge_weight = []
+
+#     # Perform clustering on the training embeddings based on labels
+#     train_embeddings = embeddings[train_mask]
+#     train_labels = labels[train_mask]
+
+#     # Flatten multi-labels into a single clustering representation
+#     cluster_assignments = []
+#     for class_idx in range(train_labels.size(1)):
+#         class_mask = (train_labels[:, class_idx] == 1).nonzero()[0]  # Fix for PyTorch 1.0 compatibility
+#         if class_mask.size(0) > 0:
+#             # Adjust number of clusters based on available samples
+#             effective_num_clusters = min(num_clusters, class_mask.size(0))
+#             kmeans = KMeans(n_init=10, n_clusters=effective_num_clusters, random_state=42)
+#             class_embeddings = train_embeddings[class_mask]
+#             clusters = kmeans.fit_predict(class_embeddings.cpu().numpy())
+#             cluster_assignments.append((class_mask, clusters))
+
+#     # Build graph edges within clusters
+#     for class_mask, clusters in cluster_assignments:
+#         for cluster_id in range(num_clusters):
+#             cluster_nodes = class_mask[(clusters == cluster_id).nonzero()[0]]  # Fix for PyTorch 1.0 compatibility
+#             if cluster_nodes.size(0) > 1:
+#                 cluster_embeddings = embeddings[cluster_nodes]
+#                 distances = 1 - F.cosine_similarity(
+#                     cluster_embeddings.unsqueeze(1), cluster_embeddings.unsqueeze(0), dim=2
+#                 )
+#                 distances.fill_diagonal_(-float('inf'))  # Mask self-loops by setting to -inf
+
+#                 # Add edges for the top `num_edges_to_add` most distant pairs in the cluster
+#                 for _ in range(min(num_edges_to_add, distances.numel())):
+#                     max_dist_idx = torch.argmax(distances)
+#                     node1, node2 = divmod(max_dist_idx.item(), distances.size(1))
+#                     edge_index.append([cluster_nodes[node1].item(), cluster_nodes[node2].item()])
+#                     edge_index.append([cluster_nodes[node2].item(), cluster_nodes[node1].item()])
+#                     if binary:
+#                         edge_weight.append(1.0)
+#                         edge_weight.append(1.0)
+#                     else:
+#                         edge_weight.append(distances[node1, node2].item())
+#                         edge_weight.append(distances[node1, node2].item())
+#                     distances[node1, node2] = -float('inf')
+#                     distances[node2, node1] = -float('inf')
+
+#     # Connect non-training nodes to their closest training nodes
+#     for class_mask, clusters in cluster_assignments:
+#         non_train_indices = class_mask[~train_mask[class_mask]]
+#         train_indices = class_mask[train_mask[class_mask]]
+
+#         if train_indices.size(0) > 0:
+#             non_train_embeddings = embeddings[non_train_indices]
+#             train_embeddings = embeddings[train_indices]
+
+#             distances = 1 - F.cosine_similarity(
+#                 non_train_embeddings.unsqueeze(1), train_embeddings.unsqueeze(0), dim=2
+#             )
+
+#             closest_train_indices = torch.argmin(distances, dim=1)
+#             for idx, closest_idx in enumerate(closest_train_indices):
+#                 edge_index.append([non_train_indices[idx].item(), train_indices[closest_idx].item()])
+#                 edge_index.append([train_indices[closest_idx].item(), non_train_indices[idx].item()])
+#                 if binary:
+#                     edge_weight.append(1.0)
+#                     edge_weight.append(1.0)
+#                 else:
+#                     edge_weight.append(distances[idx, closest_idx].item())
+#                     edge_weight.append(distances[idx, closest_idx].item())
+
+#     edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous()
+#     edge_weight = torch.tensor(edge_weight, dtype=torch.float32)
+
+#     return edge_index, edge_weight
+
+def get_subgraph_adj_multi_label(embeddings, G, num_balanced_labels, k, binary=False):
+    """
+    Constructs a subgraph adjacency matrix by selecting k labels that induce balanced classes.
+
+    Args:
+        embeddings: Node embeddings (torch.Tensor).
+        G: Graph object containing attributes like G.y (binary label matrix) and G.mask.
+        k: Number of most distant pairs of training nodes to consider.
+        num_balanced_labels: Number of labels to select for balanced class sizes.
+        binary: If True, edge weights are binary (1.0). Otherwise, they are based on cosine distances.
+
+    Returns:
+        edge_index: Edge indices (torch.LongTensor).
+        edge_weight: Edge weights (torch.FloatTensor).
+    """
+    # Step 1: Preprocess labels (convert binary labels to integer classes)
+    binary_matrix = G.y  
+
+    # Ensure binary_matrix is properly thresholded to contain only 0s and 1s
+    binary_matrix = (binary_matrix > 0).int()  # Convert to binary (0 or 1)
+
+    # Calculate the class sizes for all combinations of labels
+    label_combinations = []
+    class_sizes = []
+
+    # Iterate over all combinations of `num_balanced_labels`
+    num_labels = binary_matrix.size(1)
+    for combination in itertools.combinations(range(num_labels), num_balanced_labels):
+        # Filter binary matrix for the current combination of labels
+        filtered_matrix = binary_matrix[:, combination]
+
+        # Convert rows to integer classes
+        classes = torch.tensor(
+            [int("".join(map(str, row.tolist())), 2) for row in filtered_matrix], dtype=torch.long
+        )
+
+        # Count the number of members in each class
+        class_count = torch.bincount(classes, minlength=2**num_balanced_labels)
+        label_combinations.append(combination)
+        class_sizes.append(class_count)
+
+    # Step 2: Select the label combination with the most balanced class sizes
+    class_variances = [torch.var(size.float()).item() for size in class_sizes]
+    best_combination_idx = torch.argmin(torch.tensor(class_variances))
+    best_combination = label_combinations[best_combination_idx]
+
+    # Filter the binary matrix for the selected combination of labels
+    filtered_matrix = binary_matrix[:, best_combination]
+
+    # Convert rows of the filtered binary matrix to integer classes
+    labels = torch.tensor(
+        [int("".join(map(str, row.tolist())), 2) for row in filtered_matrix], dtype=torch.long
+    )
+
     train_mask = (G.mask == 0).to(labels.device)
+    num_classes = int(labels.max().item() + 1)
     edge_index = []
     edge_weight = []
 
-    # Perform clustering on the training embeddings based on labels
-    train_embeddings = embeddings[train_mask]
-    train_labels = labels[train_mask]
+    # Step 3: Create edges between nodes based on the selected balanced labels
+    for i in range(num_classes):
+        # Get the indices of nodes belonging to the current class
+        class_mask = (labels == i).nonzero(as_tuple=True)[0]
+        class_embeddings = embeddings[class_mask]
 
-    # Flatten multi-labels into a single clustering representation
-    cluster_assignments = []
-    for class_idx in range(train_labels.size(1)):
-        class_mask = (train_labels[:, class_idx] == 1).nonzero()[0]  # Fix for PyTorch 1.0 compatibility
-        if class_mask.size(0) > 0:
-            # Adjust number of clusters based on available samples
-            effective_num_clusters = min(num_clusters, class_mask.size(0))
-            kmeans = KMeans(n_init=10, n_clusters=effective_num_clusters, random_state=42)
-            class_embeddings = train_embeddings[class_mask]
-            clusters = kmeans.fit_predict(class_embeddings.cpu().numpy())
-            cluster_assignments.append((class_mask, clusters))
+        # Separate training and non-training nodes for the class
+        train_indices = class_mask[train_mask[class_mask]]
+        non_train_indices = class_mask[~train_mask[class_mask]]
 
-    # Build graph edges within clusters
-    for class_mask, clusters in cluster_assignments:
-        for cluster_id in range(num_clusters):
-            cluster_nodes = class_mask[(clusters == cluster_id).nonzero()[0]]  # Fix for PyTorch 1.0 compatibility
-            if cluster_nodes.size(0) > 1:
-                cluster_embeddings = embeddings[cluster_nodes]
-                distances = 1 - F.cosine_similarity(
-                    cluster_embeddings.unsqueeze(1), cluster_embeddings.unsqueeze(0), dim=2
-                )
-                distances.fill_diagonal_(-float('inf'))  # Mask self-loops by setting to -inf
+        if train_indices.size(0) > 1:
+            # Calculate pairwise cosine distances for training nodes
+            distances = 1 - F.cosine_similarity(
+                class_embeddings.unsqueeze(1), class_embeddings.unsqueeze(0), dim=2
+            )
+            distances.fill_diagonal_(-float('inf'))  # Mask self-loops by setting to -inf
 
-                # Add edges for the top `num_edges_to_add` most distant pairs in the cluster
-                for _ in range(min(num_edges_to_add, distances.numel())):
-                    max_dist_idx = torch.argmax(distances)
-                    node1, node2 = divmod(max_dist_idx.item(), distances.size(1))
-                    edge_index.append([cluster_nodes[node1].item(), cluster_nodes[node2].item()])
-                    edge_index.append([cluster_nodes[node2].item(), cluster_nodes[node1].item()])
-                    if binary:
-                        edge_weight.append(1.0)
-                        edge_weight.append(1.0)
-                    else:
-                        edge_weight.append(distances[node1, node2].item())
-                        edge_weight.append(distances[node1, node2].item())
-                    distances[node1, node2] = -float('inf')
-                    distances[node2, node1] = -float('inf')
+            # Get k most distant pairs of training nodes
+            for _ in range(k):
+                max_dist_idx = torch.argmax(distances)
+                node1, node2 = divmod(max_dist_idx.item(), distances.size(1))
+                edge_index.append([class_mask[node1].item(), class_mask[node2].item()])
+                edge_index.append([class_mask[node2].item(), class_mask[node1].item()])
+                if binary:
+                    edge_weight.append(1.0)
+                    edge_weight.append(1.0)
+                else:
+                    edge_weight.append(distances[node1, node2].item())
+                    edge_weight.append(distances[node1, node2].item())
+                distances[node1, node2] = -float('inf')
+                distances[node2, node1] = -float('inf')
 
-    # Connect non-training nodes to their closest training nodes
-    for class_mask, clusters in cluster_assignments:
+    # Connect non-training nodes to the closest training node after processing all classes
+    for i in range(num_classes):
+        class_mask = (labels == i).nonzero(as_tuple=True)[0]
         non_train_indices = class_mask[~train_mask[class_mask]]
         train_indices = class_mask[train_mask[class_mask]]
 
@@ -159,6 +281,7 @@ def get_subgraph_adj_multi_label(embeddings, G, num_clusters, num_edges_to_add, 
                     edge_weight.append(distances[idx, closest_idx].item())
                     edge_weight.append(distances[idx, closest_idx].item())
 
+    # Convert edge list to tensors
     edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous()
     edge_weight = torch.tensor(edge_weight, dtype=torch.float32)
 
@@ -257,9 +380,6 @@ def get_knn_adj(embeddings, k, distance_metric='cosine', normalize_rows=True, bi
     m = 100
     neighbors = np.argsort(dist_matrix, axis=1)[:, m:k+m]
     distances = np.sort(dist_matrix, axis=1)[:, m:k+m]
-
-    # neighbors = np.argsort(dist_matrix, axis=1)[:, -k:]
-    # distances = np.sort(dist_matrix, axis=1)[:, -k:]
 
     if normalize_rows:
         row_sums = distances.sum(axis=1, keepdims=True)
@@ -791,7 +911,7 @@ def train(args,
         early_stop = 0
 
         for i in range(1, args.num_epochs+1):
-            if i == switch_epoch  and args.model in ['isnn'] and args.channel == 'None' and not args.pretrain:
+            if i == switch_epoch and args.model in ['isnn'] and args.channel == 'None' and not args.pretrain:
                 with torch.no_grad():
                     embeddings = gnn.get_subgraph_embeddings()
                 
