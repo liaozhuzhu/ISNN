@@ -38,7 +38,6 @@ def parse_args():
     parser.add_argument('--dataset', type=str, default='hpo_metab', help='Path to the dataset')
     parser.add_argument('--model', type=str, default='isnn', help='Model to use for training')
     parser.add_argument('--device', type=int, default=0, help='Device to use for training')
-    parser.add_argument('--num_epochs', type=int, default=1500, help='Number of epochs')
     parser.add_argument('--seed', type=int, default=44, help='Random seed')
     parser.add_argument('--repeat', type=int, default=1, help='Number of repetitions for the experiment')
     parser.add_argument('--pretrain', action='store_true', help='Whether to pretrain the model')
@@ -733,10 +732,10 @@ class SubgraphProjection(nn.Module):
 
 
 def train(args, 
+        num_epochs=1500,
         hidden_dim=64,
         conv_layer=8,
         dropout=0,
-        batch_size=64,
         lr=0.001,
         weight_decay=1e-5,
         hypertuning=False,
@@ -910,7 +909,7 @@ def train(args,
         tst_auc = 0
         early_stop = 0
 
-        for i in range(1, args.num_epochs+1):
+        for i in range(1, num_epochs+1):
             if i == switch_epoch and args.model in ['isnn'] and args.channel == 'None' and not args.pretrain:
                 with torch.no_grad():
                     embeddings = gnn.get_subgraph_embeddings()

@@ -41,7 +41,7 @@ Once this is setup, you can proceed to [Running](#running) the ISNN framework.
 To run ISNN, make sure you are cd'd into the `ISNN` directory and run the following command:
 
 ```bash
-python ISNN.py --dataset {dataset_name}
+python ISNN.py --dataset {dataset_name} --model isnn --repeat 10
 ```
 
 The hyperparameters used to produce the results in the paper are preset and can be found in the `/hyperparams/{dataset}.yml` file. To change the hyperparameters, you can modify the `.yml` file.
