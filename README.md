@@ -11,6 +11,8 @@ pip install -r requirements.txt
 ```
 or use your preferred package manager.
 
+This repository was run and tested with Python 3.8.10.
+
 ### 2. Datasets
 
 The **Real-World Datasets** used in this project includes `HPO_METAB`, `HPO_NEURO`, `PPI_BP`, and `EM_USER`, all of which were sourced from the paper:
