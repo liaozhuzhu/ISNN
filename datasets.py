@@ -106,7 +106,6 @@ def load_dataset(name: str, hypertuning=False):
                                 batch_first=True,
                                 padding_value=-1)
         subGLabel = torch.tensor([ord(i) - ord('A') for i in obj["subGLabel"]])
-        # mask = torch.tensor(obj['mask'])
         cnt = subG_pad.shape[0]
         mask = torch.cat(
             (torch.zeros(cnt - cnt // 2, dtype=torch.int64),
@@ -212,7 +211,6 @@ def load_dataset(name: str, hypertuning=False):
         edge_index = torch.tensor([[int(i[0]), int(i[1])]
                                    for i in rawedge]).t()
         num_node = max([torch.max(pos), torch.max(edge_index)]) + 1
-        # x = torch.empty((num_node, 1, 0))
         feature = torch.load(f"{file_path_2}/{name}/gin_embeddings.pth",  weights_only=True)
         feature.requires_grad_(False)
         return BaseGraph(feature, edge_index, torch.ones(edge_index.shape[1]), pos,
