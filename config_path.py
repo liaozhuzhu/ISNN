@@ -1,3 +1,3 @@
 from pathlib import Path
 
-DATASET_PATH = Path("/PATH/TO/DATASETS")
+DATASET_PATH = Path("/scratch/lzhu/subignn/subgraph/data")
