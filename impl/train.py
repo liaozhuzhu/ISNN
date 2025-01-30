@@ -91,7 +91,7 @@ def train_model(optimizer, model, G, features, sparse_adj, metrics):
     loss.backward()
     optimizer.step()
     with torch.no_grad():
-        pred = model.predict(train_mask)
+        pred = model.predict(features, sparse_adj, train_mask)
         auc = calculate_auc(pred, G.y[train_mask])
         f1 = metrics(pred.cpu().numpy(), G.y[train_mask].cpu().numpy())
     return f1, auc, loss.item()
@@ -99,7 +99,7 @@ def train_model(optimizer, model, G, features, sparse_adj, metrics):
 
 
 @torch.no_grad()
-def test_model(model, G, metrics, testing=True):
+def test_model(model, G, features, sparse_adj, metrics, testing=True):
     '''
     Train models in an epoch.
     '''
@@ -109,7 +109,7 @@ def test_model(model, G, metrics, testing=True):
     else:
         mask = G.mask==1
     target = G.y[mask]
-    pred = model.predict(mask)
+    pred = model.predict(features, sparse_adj, mask)
     f1 = metrics(pred.cpu().numpy(), target.cpu().numpy())
     auc = calculate_auc(pred, target)
     return f1, auc

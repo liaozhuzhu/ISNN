@@ -112,7 +112,7 @@ class SubIGNN_v2(nn.Module):
         return loss
     
     @torch.no_grad()
-    def predict(self, train_mask):
+    def predict(self, features, sparse_adj, train_mask):
         return self.classify(train_mask)
     
 
@@ -237,7 +237,7 @@ class SubIGNN_new(nn.Module):
         return loss
     
     @torch.no_grad()
-    def predict(self, train_mask):
+    def predict(self, features, sparse_adj, train_mask):
         return self.classify(train_mask)
     
 
@@ -327,7 +327,8 @@ class SoftEIGNN(nn.Module):
         graph_residual_approximate_loss += proxy_residual_loss
         return clssifier_loss + gamma * (graph_residual_loss - graph_residual_approximate_loss)
     
-    def predict(self, train_mask):
+    def predict(self, features, sparse_adj, train_mask):
+        # hybrid_embeddings = self.forward(features, sparse_adj)
         return self.classify(train_mask)
 
 
@@ -358,7 +359,7 @@ class SoftIGNN(nn.Module):
         self.embeddings = nn.Parameter(0.01*torch.rand(num_nodes, out_channels, requires_grad=True))
         self.proxy_embeddings = 0.1*torch.randn((num_nodes, out_channels), device=device)
 
-    def forward(self, features, sparse_adj, embeddings=None):
+    def forward(self, features, sparse_adj, embeddings=None, kappa=0.95):
         self.project()
         if embeddings is None:
             embeddings = self.embeddings   
@@ -407,7 +408,7 @@ class SoftIGNN(nn.Module):
         
         return clssifier_loss + gamma * (graph_residual_loss - graph_residual_approximate_loss)
     
-    def predict(self, train_mask):
+    def predict(self, features, sparse_adj, train_mask):
         return self.classify(train_mask)
 
 
@@ -530,6 +531,7 @@ class baseline(nn.Module):
         self.projection_matrix = projection_matrix
         self.embeddings = nn.Parameter(0.01*torch.rand(num_nodes, out_channels, requires_grad=True))
         self.loss_fn = loss_fn
+        # self.node_mask = node_mask
         self.classifier = nn.Sequential(
             nn.Linear(out_channels, out_channels),
             nn.BatchNorm1d(out_channels),
@@ -545,10 +547,10 @@ class baseline(nn.Module):
         subgraph_embeddings = self.forward()
         return self.classifier(subgraph_embeddings[train_mask]) 
     
-    def loss(self, targets, train_mask):
+    def loss(self, features, sparse_adj, targets, train_mask):
         clssifier_loss = self.loss_fn(self.classify(train_mask), targets)
         return clssifier_loss
     
     @torch.no_grad()
-    def predict(self, train_mask):
+    def predict(self, features, sparse_adj, train_mask):
         return self.classify(train_mask)
