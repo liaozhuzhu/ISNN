@@ -408,7 +408,7 @@ class SoftIGNN(nn.Module):
         
         return clssifier_loss + gamma * (graph_residual_loss - graph_residual_approximate_loss)
     
-    def predict(self, features, sparse_adj, train_mask):
+    def predict(self, train_mask):
         return self.classify(train_mask)
 
 
