@@ -138,7 +138,6 @@ def load_citation_chain(normalization, cuda, need_orig=False):
     adj = sp.block_diag([chain_adj for _ in range(c*n)]) # square matrix N = c*n*l
 
     features = r.uniform(-noise, noise, size=(c, n, l, f))
-    #features = np.zeros_like(features)
     features[:, :, 0, :c] += np.eye(c).reshape(c, 1, c) # add class info to the first node of chains.
     features = features.reshape(-1, f)
 
@@ -204,8 +203,6 @@ def Evaluation(output, labels):
                 num_correct += 1
 
     print('total number of correct is: {}'.format(num_correct))
-    #print('preds max is: {0} and min is: {1}'.format(preds.max(),preds.min()))
-    #'''
     return metrics.f1_score(labels, binary_pred, average="micro"), metrics.f1_score(labels, binary_pred, average="macro")
 
 
@@ -233,7 +230,6 @@ def get_spectral_rad(sparse_tensor, tol=1e-5):
 
 def projection_norm_inf(A, kappa=0.99, transpose=False):
     """ project onto ||A||_inf <= kappa return updated A"""
-    # TODO: speed up if needed
     v = kappa
     if transpose:
         A_np = A.T.clone().detach().cpu().numpy()
@@ -267,7 +263,6 @@ def projection_norm_inf(A, kappa=0.99, transpose=False):
 
 def projection_norm_inf_and_1(A, kappa_inf=0.99, kappa_1=None, inf_first=True):
     """ project onto ||A||_inf <= kappa return updated A"""
-    # TODO: speed up if needed
     v_inf = kappa_inf
     v_1 = kappa_inf if kappa_1 is None else kappa_1
     A_np = A.clone().detach().cpu().numpy()
@@ -366,7 +361,6 @@ def load_txt_data(dataset_str = "amazon-all", portion = '0.06'):
     # porting to pytorch
     features = sparse_mx_to_torch_sparse_tensor(features).float()
     labels = torch.FloatTensor(labels)
-    #labels = torch.max(labels, dim=1)[1]
     idx_train = torch.LongTensor(idx_train)
     idx_val = torch.LongTensor(idx_val)
     idx_test = torch.LongTensor(idx_test)
@@ -384,7 +378,6 @@ def sgc_precompute(features, adj, degree):
     k = features.shape[1]
 
     for i in range(degree):
-        #features = torch.spmm(adj, features)
         features_index, features_value = torch_sparse.spspmm(adj_index, adj_value, features_index, features_value, m, n, k)
     precompute_time = perf_counter()-t
     return torch.sparse.FloatTensor(features_index, features_value, torch.Size(features.shape)), precompute_time
