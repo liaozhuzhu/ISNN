@@ -107,10 +107,6 @@ def k_hop_subgraph(center, num_hops, A, sample_ratio=1.0,
 
         subgraph = A[nodes, :][:, nodes]
 
-        # Remove target link between the subgraph.
-        # subgraph[0, 1] = 0
-        # subgraph[1, 0] = 0
-
         if node_features is not None:
             node_features = node_features[nodes]
 
@@ -138,29 +134,13 @@ def k_hop_subgraph(center, num_hops, A, sample_ratio=1.0,
             nodes = torch.unique(rw.flatten()).tolist()
 
         rw_set = nodes
-        # import torch_geometric
-        # edge_index_new, edge_attr_new = torch_geometric.utils.subgraph(subset=rw_set, edge_index=edge_index,
-        #                                                                relabel_nodes=True)
-        # subgraph api is same as org_k_hop_subgraph
 
         sub_nodes, sub_edge_index, mapping, _ = org_k_hop_subgraph(rw_set, 0, edge_index, relabel_nodes=True,
                                                                    num_nodes=data_org.num_nodes)
 
-        # src_index = rw_set.index(src)
-        # dst_index = rw_set.index(dst)
-        # mapping_list = mapping.tolist()
-        # src, dst = mapping_list[src_index], mapping_list[dst_index]
-        # Remove target link from the subgraph.
-        # mask1 = (sub_edge_index[0] != src) | (sub_edge_index[1] != dst)
-        # mask2 = (sub_edge_index[0] != dst) | (sub_edge_index[1] != src)
-        # sub_edge_index_revised = sub_edge_index[:, mask1 & mask2]
-
         y = torch.tensor([y])
         ones = starting_nodes.tolist()
         zeros = list(set(rw_set) - set(starting_nodes.tolist()))
-        # old_new_node_ids = {subnode: counter for counter, subnode in enumerate(sub_nodes.tolist())}
-        # ones = [old_new_node_ids[node_id] for node_id in ones]
-        # zeros = [old_new_node_ids[node_id] for node_id in zeros]
 
         sub_nodes_arranged = ones + zeros
         x = data_org.x[sub_nodes_arranged] if hasattr(data_org.x, 'size') else None

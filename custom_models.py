@@ -211,7 +211,6 @@ class SubIGNN_new(nn.Module):
         
         node_embeddings = embeddings[node_mask]
         subgraph_embeddings_1 = projection_matrix(node_embeddings)
-        # final_embedding = subgraph_embeddings_1
         subgraph_embeddings_2 = embeddings[~node_mask]
         att = self.attention(subgraph_embeddings_1, subgraph_embeddings_2)
         final_embedding = att[:,0].reshape(-1,1)*subgraph_embeddings_1 + att[:,1].reshape(-1,1)*subgraph_embeddings_2
