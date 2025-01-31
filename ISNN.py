@@ -996,10 +996,6 @@ def run_helper(argument_class, hypertuning=False):
         loss_fn = nn.CrossEntropyLoss()
         output_channels = baseG.y.unique().shape[0]
         score_fn = metrics.microf1
-
-
-    loader_fn = SubGDataset.GDataloader
-    tloader_fn = SubGDataset.GDataloader
     
     # read configuration
     path_to_config = f"hyperparams/{argument_class.dataset}.yml"
