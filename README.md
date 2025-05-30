@@ -1,5 +1,11 @@
 # ISNN
 
+> **Official implementation of the paper:**  
+> **"Implicit Subgraph Neural Network"**  
+> Yongjian Zhong, Liao Zhu, Hieu Vu, Bijaya Adhikari  
+> _Submitted to the Thirty-ninth Conference on Neural Information Processing Systems (NeurIPS 2025)_  
+> [[OpenReview PDF](https://openreview.net/pdf?id=QhCb3FAQi2)]
+
 ## Setup
 
 ### 1. Install Required Libraries
