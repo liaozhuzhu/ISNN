@@ -3,7 +3,7 @@
 > **Official implementation of the paper:**  
 > **"Implicit Subgraph Neural Network"**  
 > Yongjian Zhong, Liao Zhu, Hieu Vu, Bijaya Adhikari  
-> _Submitted to the Thirty-ninth Conference on Neural Information Processing Systems (NeurIPS 2025)_  
+> _Accepted at the 42nd International Conference on Machine Learning (ICML 2025), Poster_
 > [[OpenReview PDF](https://openreview.net/pdf?id=QhCb3FAQi2)]
 
 ## Setup
